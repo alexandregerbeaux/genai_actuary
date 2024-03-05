@@ -10,19 +10,19 @@ class DataRobotPredictionError(Exception):
     """Raised if there are issues getting predictions from DataRobot"""
 
 def init_config ():
-    
+
     if "guard_model_deployment_id" not in st.session_state:
         st.session_state.guard_model_deployment_id = st.secrets["DEFAULT_GUARD_MODEL_DEPLOYMENT_ID"]
 
     if "genai_model_deployment_id" not in st.session_state:
         st.session_state.genai_model_deployment_id = st.secrets["DEFAULT_GENAI_MODEL_DEPLOYMENT_ID"]
-    
+
 def make_datarobot_deployment_predictions(data, content_type, deployment_id):
 
     api_key = st.secrets["API_KEY"]
     datarobot_key = st.secrets["DATAROBOT_KEY"]
     api_url = st.secrets["API_URL"]
-    
+
     # Set HTTP headers. The charset should match the contents of the file.
     headers = {
         'Content-Type': content_type,
@@ -49,9 +49,9 @@ def _raise_dataroboterror_for_status(response):
         err_msg = '{code} Error: {msg}'.format(
             code=response.status_code, msg=response.text)
         raise DataRobotPredictionError(err_msg)
-    
+
 def ask_generative_model(generative_model_deployment_id, prompt):
-    body = [{"question": prompt}]
+    body = [{"promptText": prompt}]
     response = make_datarobot_deployment_predictions(json.dumps(body), "application/json", generative_model_deployment_id)
     return response["data"][0]["prediction"]
 
