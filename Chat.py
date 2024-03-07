@@ -17,7 +17,7 @@ if __name__ == "__main__":
         st.image("sas.png", width=50)
 
     with col2:
-        st.subheader("Meet your Compliance Oracle!")
+        st.subheader("Meet your Compliance Oracle! Hello")
 
     with col3:
         if st.button('Clear chat'):
