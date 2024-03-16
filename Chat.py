@@ -2,7 +2,7 @@ from streamlit_feedback import streamlit_feedback
 import streamlit as st
 from helpers import init_config, write_history, DataRobotPredictionError, ask_generative_model, ask_guard_model, get_custom_metric_id, submit_metric, topic_guard
 import datetime as dt
-from trubrics.integrations.streamlit import FeedbackCollector
+#from trubrics.integrations.streamlit import FeedbackCollector
 import datarobotx as drx
 
 from htbuilder import HtmlElement, div, ul, li, br, hr, a, p, img, styles, classes, fonts
