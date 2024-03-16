@@ -3,11 +3,37 @@ import requests
 import json
 import pandas as pd
 import os
+import datarobotx as drx
+
 
 CONVERSATION_HISTORY = "data/conversation_history.csv"
 
 class DataRobotPredictionError(Exception):
     """Raised if there are issues getting predictions from DataRobot"""
+
+
+def topic_guard(prompt):
+#    {'flagged': False,
+# 'raw_outputs': {'sequence': 'are you able to sell an insurance policy?',
+#  'labels': ['insurance topic', 'non insurance topic'],
+#  'scores': [0.9870773553848267, 0.01292266882956028]}}
+
+    drx.Context(token=st.secrets["API_KEY"], endpoint="https://app.datarobot.com/api/v2")
+
+    guard_deployment = drx.Deployment.from_url(
+        url='https://app.datarobot.com/deployments/6524a1ea013eb2c0df303730/overview'
+    )
+
+    response = guard_deployment.predict_unstructured(
+        {
+            'sequences': prompt,
+            'candidate_labels': ['insurance topic', 'non insurance topic'],
+            'permitted_labels': ['insurance topic']
+        }
+    )
+
+    return response
+
 
 def init_config ():
 
@@ -16,6 +42,8 @@ def init_config ():
 
     if "genai_model_deployment_id" not in st.session_state:
         st.session_state.genai_model_deployment_id = st.secrets["DEFAULT_GENAI_MODEL_DEPLOYMENT_ID"]
+
+
 
 def make_datarobot_deployment_predictions(data, content_type, deployment_id):
 
@@ -41,6 +69,10 @@ def make_datarobot_deployment_predictions(data, content_type, deployment_id):
     _raise_dataroboterror_for_status(predictions_response)
     return predictions_response.json()
 
+
+
+
+
 def _raise_dataroboterror_for_status(response):
     """Raise DataRobotPredictionError if the request fails along with the response returned"""
     try:
@@ -53,7 +85,23 @@ def _raise_dataroboterror_for_status(response):
 def ask_generative_model(generative_model_deployment_id, prompt):
     body = [{"promptText": prompt}]
     response = make_datarobot_deployment_predictions(json.dumps(body), "application/json", generative_model_deployment_id)
-    return response["data"][0]["prediction"]
+    r = response["data"][0]["prediction"]
+
+    l = r[r.find('Citations') + 11:]
+    l2 = l[:l.find('}]')+2]
+    l3 = eval(l2)
+    l4 = list(set([f"document {i['source']} at page {i['page']}" for i in l3]))
+    if len(l4)==0:
+        citations = ''
+    elif len(l4)==1:
+        citations = '\nfor further reference please refer to:' + l4
+    else:
+        citations = '**Reference:**'+ ' \n\n-'+l4[0] + ' \n\n-' +' \n\n-'.join(l4[1:]) + ''
+
+    confidence_score = float(r[r.find('Rouge1: ') + len('Rouge1: '):])
+
+
+    return r[:r.find('Citations')]+citations, confidence_score
 
 def ask_guard_model(guard_model_deployment_id, prompt):
     response = make_datarobot_deployment_predictions(json.dumps([{"text": prompt}]), "application/json", guard_model_deployment_id)

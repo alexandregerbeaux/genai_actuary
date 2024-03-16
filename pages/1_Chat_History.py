@@ -16,7 +16,7 @@ if df.empty:
 else:
     with history_placeholder.container():
         st.dataframe(df)
-    
-    if st.button('Clean history'):
-        clean_history()
-        history_placeholder.empty()
+
+    #if st.button('Clean history'):
+    #    clean_history()
+    #    history_placeholder.empty()
