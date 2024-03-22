@@ -82,6 +82,15 @@ def _raise_dataroboterror_for_status(response):
             code=response.status_code, msg=response.text)
         raise DataRobotPredictionError(err_msg)
 
+def deduplicate_preserve_order(seq):
+    seen = set()
+    deduplicated = []
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            deduplicated.append(item)
+    return deduplicated
+
 def ask_generative_model(generative_model_deployment_id, prompt):
     body = [{"promptText": prompt}]
     response = make_datarobot_deployment_predictions(json.dumps(body), "application/json", generative_model_deployment_id)
@@ -90,13 +99,17 @@ def ask_generative_model(generative_model_deployment_id, prompt):
     l = r[r.find('Citations') + 11:]
     l2 = l[:l.find('}]')+2]
     l3 = eval(l2)
-    l4 = list(set([f"document {i['source']} at page {i['page']}" for i in l3]))
+    my_list = [f"document {i['source']} at page {i['page']}" for i in l3]
+    l4 = deduplicate_preserve_order(my_list)
+    #unique_list = list(set(my_list))
+    #unique_list = [x for x in my_list if x not in unique_list]
+    #l4=unique_list
     if len(l4)==0:
         citations = ''
     elif len(l4)==1:
         citations = '\nfor further reference please refer to:' + l4
     else:
-        citations = '**Reference:**'+ ' \n\n-'+l4[0] + ' \n\n-' +' \n\n-'.join(l4[1:]) + ''
+        citations = '**Reference:**'+ ' \n\n- '+l4[0] + ' \n\n- ' +' \n\n- '.join(l4[1:]) + ''
 
     confidence_score = float(r[r.find('Rouge1: ') + len('Rouge1: '):])
 
